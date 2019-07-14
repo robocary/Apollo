@@ -10,6 +10,7 @@ cc_library(
     hdrs = [
         "map_service.h",
     ],
+    copts = ['-DMODULE_NAME=\\"dreamview\\"'],
     linkopts = [
         "-lboost_thread",
     ],
@@ -31,6 +32,9 @@ cc_test(
     ],
     data = [
         "//modules/dreamview/backend/testdata",
+    ],
+    linkopts = [
+        "-lboost_system",
     ],
     deps = [
         ":map_service",

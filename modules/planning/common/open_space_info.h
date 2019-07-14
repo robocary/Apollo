@@ -65,14 +65,6 @@ class OpenSpaceInfo {
   OpenSpaceInfo() = default;
   ~OpenSpaceInfo() = default;
 
-  bool open_space_pre_stop_finished() const {
-    return open_space_pre_stop_finished_;
-  }
-
-  void set_open_space_pre_stop_finished(const bool flag) {
-    open_space_pre_stop_finished_ = flag;
-  }
-
   const std::string target_parking_spot_id() const {
     return target_parking_spot_id_;
   }
@@ -303,14 +295,11 @@ class OpenSpaceInfo {
     return &debug_instance_;
   }
 
-  void sync_debug_instance() { debug_instance_ = *debug_; }
+  void sync_debug_instance() { debug_instance_.MergeFrom(*debug_); }
 
   void RecordDebug(apollo::planning_internal::Debug *ptr_debug);
 
  private:
-  // @brief vehicle needs to stop first in open space related scenarios
-  bool open_space_pre_stop_finished_ = true;
-
   std::string target_parking_spot_id_;
 
   hdmap::ParkingSpaceInfoConstPtr target_parking_spot_ = nullptr;

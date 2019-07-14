@@ -18,6 +18,7 @@
 
 #include <Eigen/Eigenvalues>
 #include <limits>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 #include "modules/localization/msf/local_map/base_map/base_map_config.h"
@@ -82,7 +83,7 @@ class NdtMapSingleCell {
   Eigen::Matrix3f centroid_average_cov_;
   /**@brief the pose inverse covariance of the cell. */
   Eigen::Matrix3f centroid_icov_;
-  /**@brief the inverse covariance avaliable flag. */
+  /**@brief the inverse covariance available flag. */
   unsigned char is_icov_available_ = 0;
   /**@brief minimum number of points needed. */
   const unsigned int minimum_points_threshold_ = 6;
@@ -193,7 +194,7 @@ class NdtMapMatrix : public BaseMapMatrix {
   /**@brief The number of columns. */
   unsigned int cols_;
   /**@brief The matrix data structure. */
-  NdtMapCells* map3d_cells_;
+  std::unique_ptr<NdtMapCells[]> map3d_cells_;
 };
 
 inline void NdtMapSingleCell::Reset() {

@@ -134,7 +134,7 @@ Status OnLanePlanning::InitFrame(const uint32_t sequence_num,
       hdmap::PncMap::LookForwardDistance(vehicle_state.linear_velocity());
 
   for (auto& ref_line : reference_lines) {
-    if (!ref_line.Shrink(Vec2d(vehicle_state.x(), vehicle_state.y()),
+    if (!ref_line.Segment(Vec2d(vehicle_state.x(), vehicle_state.y()),
                          FLAGS_look_backward_distance, forword_limit)) {
       std::string msg = "Fail to shrink reference line.";
       return Status(ErrorCode::PLANNING_ERROR, msg);
@@ -245,7 +245,7 @@ void OnLanePlanning::RunOnce(const LocalView& local_view,
   std::vector<TrajectoryPoint> stitching_trajectory =
       TrajectoryStitcher::ComputeStitchingTrajectory(
           vehicle_state, start_timestamp, planning_cycle_time,
-          FLAGS_trajectory_stitching_preserved_length,
+          FLAGS_trajectory_stitching_preserved_length, true,
           last_publishable_trajectory_.get(), &replan_reason);
 
   EgoInfo::Instance()->Update(stitching_trajectory.back(), vehicle_state);
@@ -413,9 +413,12 @@ void OnLanePlanning::ExportReferenceLineDebug(planning_internal::Debug* debug) {
     const auto sample_s = 0.1;
     const auto reference_line_length =
         reference_line_info.reference_line().Length();
+    double average_offset = 0.0;
+    double sample_count = 0.0;
     for (double s = 0.0; s < reference_line_length; s += sample_s) {
       double left_width = reference_line_path.GetLaneLeftWidth(s);
       double right_width = reference_line_path.GetLaneRightWidth(s);
+      average_offset += 0.5 * std::abs(left_width - right_width);
       if (left_width < adc_half_width || right_width < adc_half_width) {
         is_off_road = true;
       }
@@ -425,9 +428,11 @@ void OnLanePlanning::ExportReferenceLineDebug(planning_internal::Debug* debug) {
       if (right_width < minimum_boundary) {
         minimum_boundary = right_width;
       }
+      ++sample_count;
     }
     rl_debug->set_is_offroad(is_off_road);
     rl_debug->set_minimum_boundary(minimum_boundary);
+    rl_debug->set_average_offset(average_offset / sample_count);
   }
 }
 

@@ -71,9 +71,11 @@ class ReferenceLine {
    */
   bool Stitch(const ReferenceLine& other);
 
-  bool Shrink(const common::math::Vec2d& point, double look_backward,
-              double look_forward);
-  bool Shrink(const double s, double look_backward, double look_forward);
+  bool Segment(const common::math::Vec2d& point, const double distance_backward,
+               const double distance_forward);
+
+  bool Segment(const double s, const double distance_backward,
+               const double distance_forward);
 
   const hdmap::Path& map_path() const;
   const std::vector<ReferencePoint>& reference_points() const;
@@ -192,7 +194,7 @@ class ReferenceLine {
    * @param p1 the second anchor point for interpolation
    * @param s1 the longitutial distance (s) of p1 on current reference line.
    * s1
-   * @param s identifies the the middle point that is going to be
+   * @param s identifies the middle point that is going to be
    * interpolated.
    * s >= s0 && s <= s1
    * @return The interpolated ReferencePoint.

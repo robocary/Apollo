@@ -159,6 +159,7 @@ proto_library(
         ":navi_path_decider_config_proto_lib",
         ":navi_speed_decider_config_proto_lib",
         ":open_space_fallback_decider_config_proto_lib",
+        ":open_space_pre_stop_decider_config_proto_lib",
         ":open_space_roi_decider_config_proto_lib",
         ":open_space_trajectory_partition_config_proto_lib",
         ":open_space_trajectory_provider_config_proto_lib",
@@ -183,6 +184,7 @@ proto_library(
     deps = [
         ":decision_proto_lib",
         ":planning_config_proto_lib",
+        ":planning_status_proto_lib",
         ":sl_boundary_proto_lib",
         "//modules/canbus/proto:canbus_proto_lib",
         "//modules/common/proto:header_proto_lib",
@@ -221,6 +223,10 @@ proto_library(
     name = "reference_line_smoother_config_proto_lib",
     srcs = [
         "reference_line_smoother_config.proto",
+    ],
+    deps = [
+        ":cos_theta_smoother_config_proto_lib",
+        ":fem_pos_deviation_smoother_config_proto_lib",
     ],
 )
 
@@ -360,8 +366,8 @@ proto_library(
     ],
     deps = [
         ":planning_config_proto_lib",
-        ":planning_proto_lib",
         "//modules/common/proto:drive_state_proto_lib",
+        "//modules/common/proto:geometry_proto_lib",
         "//modules/common/proto:pnc_point_proto_lib",
         "//modules/routing/proto:routing_proto_lib",
     ],
@@ -408,6 +414,7 @@ proto_library(
         "planner_open_space_config.proto",
     ],
     deps = [
+        ":fem_pos_deviation_smoother_config_proto_lib",
         ":piecewise_jerk_speed_config_proto_lib",
     ],
 )
@@ -537,6 +544,20 @@ cc_proto_library(
     ],
 )
 
+proto_library(
+    name = "open_space_pre_stop_decider_config_proto_lib",
+    srcs = [
+        "open_space_pre_stop_decider_config.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "open_space_pre_stop_decider_config_proto",
+    deps = [
+        ":open_space_pre_stop_decider_config_proto_lib",
+    ],
+)
+
 cc_proto_library(
     name = "path_decider_info_proto",
     deps = [
@@ -562,6 +583,34 @@ proto_library(
     name = "rule_based_stop_decider_config_proto_lib",
     srcs = [
         "rule_based_stop_decider_config.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "cos_theta_smoother_config_proto",
+    deps = [
+        ":cos_theta_smoother_config_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "cos_theta_smoother_config_proto_lib",
+    srcs = [
+        "cos_theta_smoother_config.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "fem_pos_deviation_smoother_config_proto",
+    deps = [
+        ":fem_pos_deviation_smoother_config_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "fem_pos_deviation_smoother_config_proto_lib",
+    srcs = [
+        "fem_pos_deviation_smoother_config.proto",
     ],
 )
 

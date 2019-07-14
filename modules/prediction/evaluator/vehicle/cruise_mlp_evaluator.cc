@@ -22,6 +22,7 @@
 
 #include "cyber/common/file.h"
 #include "modules/prediction/common/feature_output.h"
+#include "modules/prediction/common/prediction_constants.h"
 #include "modules/prediction/common/prediction_gflags.h"
 #include "modules/prediction/common/prediction_system_gflags.h"
 #include "modules/prediction/common/prediction_util.h"
@@ -47,34 +48,38 @@ double ComputeMean(const std::vector<double>& nums, size_t start, size_t end) {
 }
 
 CruiseMLPEvaluator::CruiseMLPEvaluator() : device_(torch::kCPU) {
+  evaluator_type_ = ObstacleConf::CRUISE_MLP_EVALUATOR;
   LoadModels();
 }
 
 void CruiseMLPEvaluator::Clear() {}
 
-void CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
+bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
   // Sanity checks.
   omp_set_num_threads(1);
   Clear();
   CHECK_NOTNULL(obstacle_ptr);
+
+  obstacle_ptr->SetEvaluatorType(evaluator_type_);
+
   int id = obstacle_ptr->id();
   if (!obstacle_ptr->latest_feature().IsInitialized()) {
     AERROR << "Obstacle [" << id << "] has no latest feature.";
-    return;
+    return false;
   }
   Feature* latest_feature_ptr = obstacle_ptr->mutable_latest_feature();
   CHECK_NOTNULL(latest_feature_ptr);
   if (!latest_feature_ptr->has_lane() ||
       !latest_feature_ptr->lane().has_lane_graph()) {
     ADEBUG << "Obstacle [" << id << "] has no lane graph.";
-    return;
+    return false;
   }
   LaneGraph* lane_graph_ptr =
       latest_feature_ptr->mutable_lane()->mutable_lane_graph();
   CHECK_NOTNULL(lane_graph_ptr);
   if (lane_graph_ptr->lane_sequence_size() == 0) {
     AERROR << "Obstacle [" << id << "] has no lane sequences.";
-    return;
+    return false;
   }
 
   ADEBUG << "There are " << lane_graph_ptr->lane_sequence_size()
@@ -95,7 +100,8 @@ void CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
     }
 
     // Insert features to DataForLearning
-    if (FLAGS_prediction_offline_mode == 2) {
+    if (FLAGS_prediction_offline_mode ==
+        PredictionConstants::kDumpDataForLearning) {
       std::vector<double> interaction_feature_values;
       SetInteractionFeatureValues(obstacle_ptr, lane_sequence_ptr,
                                   &interaction_feature_values);
@@ -103,7 +109,7 @@ void CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
         ADEBUG << "Obstacle [" << id << "] has fewer than "
                << "expected lane feature_values"
                << interaction_feature_values.size() << ".";
-        return;
+        return false;
       }
       ADEBUG << "Interaction feature size = "
              << interaction_feature_values.size();
@@ -113,7 +119,7 @@ void CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
       FeatureOutput::InsertDataForLearning(*latest_feature_ptr, feature_values,
                                            "lane_scanning", lane_sequence_ptr);
       ADEBUG << "Save extracted features for learning locally.";
-      return;  // Skip Compute probability for offline mode
+      return true;  // Skip Compute probability for offline mode
     }
 
     std::vector<torch::jit::IValue> torch_inputs;
@@ -130,6 +136,7 @@ void CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr) {
       ModelInference(torch_inputs, torch_cutin_model_ptr_, lane_sequence_ptr);
     }
   }
+  return true;
 }
 
 void CruiseMLPEvaluator::ExtractFeatureValues(
